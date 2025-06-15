@@ -116,3 +116,4 @@ test_files/
 .ruff_cache/
 .cursor/
 .cursorignore
+appmap.yml
