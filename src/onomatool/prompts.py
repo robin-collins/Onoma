@@ -6,19 +6,22 @@ These can be overridden via the .onomarc config file.
 from onomatool.config import get_config
 
 
-def get_system_prompt() -> str:
-    config = get_config()
+def get_system_prompt(config=None) -> str:
+    if config is None:
+        config = get_config()
     return config.get("system_prompt") or DEFAULT_SYSTEM_PROMPT
 
 
-def get_user_prompt(naming_convention: str, content: str) -> str:
-    config = get_config()
+def get_user_prompt(naming_convention: str, content: str, config=None) -> str:
+    if config is None:
+        config = get_config()
     template = config.get("user_prompt") or DEFAULT_USER_PROMPT
     return template.format(naming_convention=naming_convention, content=content)
 
 
-def get_image_prompt(naming_convention: str) -> str:
-    config = get_config()
+def get_image_prompt(naming_convention: str, config=None) -> str:
+    if config is None:
+        config = get_config()
     template = config.get("image_prompt") or DEFAULT_IMAGE_PROMPT
     return template.format(naming_convention=naming_convention)
 

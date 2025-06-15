@@ -55,11 +55,15 @@ class MarkitdownProcessor:
         try:
             ext = os.path.splitext(file_path)[1].lower()
             result = self.md.convert(file_path)
+
             if ext == ".pdf" and fitz is not None:
                 images = []
-                tempdir = tempfile.TemporaryDirectory()
                 if self.debug:
-                    print(f"[DEBUG] Created tempdir for PDF: {tempdir.name}")
+                    # Create a regular temp directory that won't auto-cleanup
+                    tempdir_path = tempfile.mkdtemp(prefix="onoma_pdf_")
+                    tempdir = type('TempDir', (), {'name': tempdir_path, 'cleanup': lambda: None})()
+                else:
+                    tempdir = tempfile.TemporaryDirectory()
                 doc = fitz.open(file_path)
                 for page_num in range(len(doc)):
                     page = doc.load_page(page_num)
@@ -67,8 +71,13 @@ class MarkitdownProcessor:
                     img_path = os.path.join(tempdir.name, f"page_{page_num + 1}.png")
                     pix.save(img_path)
                     images.append(img_path)
-                    if self.debug:
-                        print(f"[DEBUG] Created image: {img_path}")
+
+                # Save markdown content to file in debug mode
+                if self.debug:
+                    markdown_path = os.path.join(tempdir.name, "extracted_content.md")
+                    with open(markdown_path, "w", encoding="utf-8") as f:
+                        f.write(result.text_content)
+
                 return {
                     "markdown": result.text_content,
                     "images": images,
@@ -76,10 +85,12 @@ class MarkitdownProcessor:
                 }
             elif ext == ".pptx":
                 images = []
-                tempdir = tempfile.TemporaryDirectory()
                 if self.debug:
-                    print(f"[DEBUG] Created tempdir for PPTX: {tempdir.name}")
-                    print(f"[DEBUG] Processing file: {file_path}")
+                    # Create a regular temp directory that won't auto-cleanup
+                    tempdir_path = tempfile.mkdtemp(prefix="onoma_pptx_")
+                    tempdir = type('TempDir', (), {'name': tempdir_path, 'cleanup': lambda: None})()
+                else:
+                    tempdir = tempfile.TemporaryDirectory()
                 try:
                     # Step 1: Convert PPTX to PDF
                     basename = os.path.splitext(os.path.basename(file_path))[0]
@@ -97,8 +108,6 @@ class MarkitdownProcessor:
                     if result.returncode != 0 or not os.path.exists(pdf_path):
                         print(f"[PPTX2IMG ERROR] soffice failed: {result.stderr}")
                         return None
-                    if self.debug:
-                        print(f"[DEBUG] Created PDF: {pdf_path}")
                     # Step 2: Convert PDF to JPEGs
                     output_pattern = os.path.join(tempdir.name, f"{basename}-%d.jpeg")
                     convert_cmd = [
@@ -120,13 +129,17 @@ class MarkitdownProcessor:
                     jpeg_files = sorted(
                         glob.glob(os.path.join(tempdir.name, f"{basename}-*.jpeg"))
                     )
-                    if self.debug:
-                        for img_path in jpeg_files:
-                            print(f"[DEBUG] Created image: {img_path}")
                     if not jpeg_files:
                         print("[PPTX2IMG ERROR] No images generated from PPTX.")
                         return None
                     images.extend(jpeg_files)
+
+                    # Save markdown content to file in debug mode
+                    if self.debug:
+                        markdown_path = os.path.join(tempdir.name, "extracted_content.md")
+                        with open(markdown_path, "w", encoding="utf-8") as f:
+                            f.write(result.text_content)
+
                     return {
                         "markdown": result.text_content,
                         "images": images,
@@ -137,8 +150,31 @@ class MarkitdownProcessor:
                     return None
             elif ext == ".svg":
                 # No conversion here; handled elsewhere
+                # But save markdown content in debug mode
+                if self.debug and result.text_content:
+                    tempdir_path = tempfile.mkdtemp(prefix="onoma_svg_md_")
+                    tempdir = type('TempDir', (), {'name': tempdir_path, 'cleanup': lambda: None})()
+                    markdown_path = os.path.join(tempdir.name, "extracted_content.md")
+                    with open(markdown_path, "w", encoding="utf-8") as f:
+                        f.write(result.text_content)
+                    return {
+                        "markdown": result.text_content,
+                        "tempdir": tempdir,
+                    }
                 return result.text_content
             else:
+                # For all other file types (docx, txt, etc.), save markdown in debug mode
+                if self.debug and result.text_content:
+                    file_ext = ext.lstrip('.')
+                    tempdir_path = tempfile.mkdtemp(prefix=f"onoma_{file_ext}_")
+                    tempdir = type('TempDir', (), {'name': tempdir_path, 'cleanup': lambda: None})()
+                    markdown_path = os.path.join(tempdir.name, "extracted_content.md")
+                    with open(markdown_path, "w", encoding="utf-8") as f:
+                        f.write(result.text_content)
+                    return {
+                        "markdown": result.text_content,
+                        "tempdir": tempdir,
+                    }
                 return result.text_content
         except Exception as e:
             print(f"Error processing {file_path} with Markitdown: {e}")

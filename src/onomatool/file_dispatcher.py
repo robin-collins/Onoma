@@ -6,8 +6,8 @@ from .processors.text_processor import TextProcessor
 class FileDispatcher:
     """Routes files to appropriate processors based on file type"""
 
-    def __init__(self, debug: bool = False):
-        self.config = get_config()
+    def __init__(self, config: dict, debug: bool = False):
+        self.config = config
         self.debug = debug
         self.processors: dict[str, object] = {
             ".txt": TextProcessor(),

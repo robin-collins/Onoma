@@ -1,0 +1,14 @@
+default_provider = "mock"
+openai_api_key = "test-key"
+openai_base_url = "https://mock-llm.local"
+google_api_key = "test-key"
+naming_convention = "snake_case"
+llm_model = "mock-model"
+system_prompt = "MOCK SYSTEM PROMPT"
+user_prompt = "MOCK USER PROMPT: {content}"
+image_prompt = "MOCK IMAGE PROMPT"
+
+[markitdown]
+enable_plugins = false
+docintel_endpoint = ""
+llm_model = "mock-model"

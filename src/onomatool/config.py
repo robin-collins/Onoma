@@ -20,9 +20,15 @@ DEFAULT_CONFIG = {
 }
 
 
-def get_config() -> dict[str, Any]:
-    """Load configuration from ~/.onomarc or return defaults"""
-    config_path = os.path.expanduser("~/.onomarc")
+def get_config(config_path: str = None) -> dict[str, Any]:
+    """
+    Load configuration from the given config_path or from ~/.onomarc if not specified.
+    Returns the config as a dict, or DEFAULT_CONFIG if loading fails.
+    """
+    if config_path is None:
+        config_path = os.path.expanduser("~/.onomarc")
+    else:
+        config_path = os.path.expanduser(config_path)
     if os.path.exists(config_path):
         try:
             with open(config_path) as f:

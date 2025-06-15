@@ -1,5 +1,18 @@
 # Changelog
 
+## [Documentation Update] - 2025-01-27
+### Updated
+- Completely rewrote README.md to accurately reflect current application features and functionality
+- Added comprehensive feature breakdown including Core Functionality, File Processing, CLI Modes, and Advanced Features
+- Updated installation instructions with multiple installation methods
+- Added detailed configuration examples with all supported options
+- Added supported file types table showing processing methods and outputs
+- Added development section with project structure, testing, and code style information
+- Added advanced usage examples for custom configs, local LLMs, and format forcing
+- Added safety features section highlighting conflict resolution and data protection
+- Updated FAQ section with more comprehensive questions and answers
+- Improved overall organization and readability with better section structure
+
 ## [Architecture Redesign] - 2025-06-15
 ### Implemented
 - Integrated Markitdown as primary file processor
@@ -41,9 +54,10 @@
 
 ## [Fixed] - 2025-06-15
 ### Fixed
-- Fixed TypeError in cli.py by updating get_suggestions call to only pass 'content' argument, matching its definition in llm_integration.py.
-- Fixed FileNotFoundError in renamer.py by defaulting to '.' when the directory is empty, allowing renaming of files in the current directory.
-- Fixed SVG files: markdown and final prompt LLM calls now use the generated PNG (not the original SVG) as image input, ensuring correct image encoding and LLM behavior. (cli.py)
+- Fix: Temp files for PDF/SVG/PPTX are now properly preserved when running with --debug. Fixed variable collision issue where PDF tempdir was overwriting SVG tempdir variable, causing incorrect cleanup behavior. Temp directories are now kept alive for the duration of the program to prevent garbage collection, and debug output shows preservation status.
+
+### Enhanced
+- Enhancement: When using --debug mode, the markdown content extracted by MarkItDown from ALL file types (PDF, PPTX, DOCX, TXT, etc.) is now saved as "extracted_content.md" in dedicated temp directories alongside any images, allowing for complete inspection of the extracted content for any file type.
 
 ## [New] - 2025-06-15
 ### Added
@@ -70,3 +84,7 @@
 ### [Added] - 2025-06-16
 * Added `--debug` CLI option. When set, temporary files and directories created for SVG, PDF, and PPTX processing are not deleted after use, and their full paths are printed to the console for debugging.
 * FileDispatcher and MarkitdownProcessor now accept a debug argument to control debug output and temp file cleanup behavior.
+
+## [Added] - 2025-06-17
+- Added end user usage tests in tests/test_usage_enduser.py for CLI, --config, dry-run, interactive, debug, and config override features. Tests use pytest and mock LLM responses.
+- Added test_files/mock_config.toml for use in tests, with static LLM responses and simple prompts.
