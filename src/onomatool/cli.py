@@ -104,8 +104,7 @@ def main(args=None):
         debug_tempdirs = []
 
         for file_path in files:
-            if args.debug:
-                print(f"[DEBUG] Processing file: {file_path}")
+            print(f"Processing file: {file_path}")
             _, ext = os.path.splitext(file_path)
             is_svg = ext.lower() == ".svg"
             tempdir = None
@@ -114,7 +113,9 @@ def main(args=None):
                 if args.debug:
                     # Create a regular temp directory that won't auto-cleanup
                     tempdir_path = tempfile.mkdtemp(prefix="onoma_svg_")
-                    tempdir = type('TempDir', (), {'name': tempdir_path, 'cleanup': lambda: None})()
+                    tempdir = type(
+                        "TempDir", (), {"name": tempdir_path, "cleanup": lambda: None}
+                    )()
                     print(f"[DEBUG] Created tempdir for SVG: {tempdir.name}")
                 else:
                     tempdir = tempfile.TemporaryDirectory()
@@ -150,7 +151,7 @@ def main(args=None):
                         else result.get("markdown", ""),
                         verbose=args.verbose,
                         file_path=png_path,
-                        config=config
+                        config=config,
                     )
                     guidance = "\n".join(flat_image_suggestions)
                     final_prompt = (
@@ -163,7 +164,10 @@ def main(args=None):
                         f"MARKDOWN:\n{result if isinstance(result, str) else result.get('markdown', '')}"
                     )
                     final_suggestions = get_suggestions(
-                        final_prompt, verbose=args.verbose, file_path=png_path, config=config
+                        final_prompt,
+                        verbose=args.verbose,
+                        file_path=png_path,
+                        config=config,
                     )
                     suggestions = (
                         final_suggestions or md_suggestions or flat_image_suggestions
@@ -190,18 +194,27 @@ def main(args=None):
                         images = result["images"]
                         pdf_tempdir = result.get("tempdir")
                         if pdf_tempdir is not None and args.debug:
-                            debug_tempdirs.append(pdf_tempdir)  # Prevent GC in debug mode
-                            print(f"[DEBUG] Created tempdir for PDF/PPTX: {pdf_tempdir.name}")
+                            debug_tempdirs.append(
+                                pdf_tempdir
+                            )  # Prevent GC in debug mode
+                            print(
+                                f"[DEBUG] Created tempdir for PDF/PPTX: {pdf_tempdir.name}"
+                            )
                             for img_path in images:
                                 print(f"[DEBUG] Created image: {img_path}")
                             # Check if markdown file was created
-                            markdown_path = os.path.join(pdf_tempdir.name, "extracted_content.md")
+                            markdown_path = os.path.join(
+                                pdf_tempdir.name, "extracted_content.md"
+                            )
                             if os.path.exists(markdown_path):
                                 print(f"[DEBUG] Created markdown: {markdown_path}")
                         all_image_suggestions = []
                         for img_path in images:
                             img_suggestions = get_suggestions(
-                                "", verbose=args.verbose, file_path=img_path, config=config
+                                "",
+                                verbose=args.verbose,
+                                file_path=img_path,
+                                config=config,
                             )
                             if img_suggestions:
                                 all_image_suggestions.append(img_suggestions)
@@ -213,7 +226,7 @@ def main(args=None):
                             result["markdown"],
                             verbose=args.verbose,
                             file_path=md_file_path,
-                            config=config
+                            config=config,
                         )
                         guidance = "\n".join(flat_image_suggestions)
                         final_prompt = (
@@ -226,7 +239,10 @@ def main(args=None):
                             f"MARKDOWN:\n{result['markdown']}"
                         )
                         final_suggestions = get_suggestions(
-                            final_prompt, verbose=args.verbose, file_path=md_file_path, config=config
+                            final_prompt,
+                            verbose=args.verbose,
+                            file_path=md_file_path,
+                            config=config,
                         )
                         suggestions = (
                             final_suggestions
@@ -252,17 +268,28 @@ def main(args=None):
                         # Handle files with tempdir but no images (text files, Word docs, etc. in debug mode)
                         file_tempdir = result.get("tempdir")
                         if file_tempdir is not None and args.debug:
-                            debug_tempdirs.append(file_tempdir)  # Prevent GC in debug mode
-                            file_type = os.path.splitext(file_path)[1].upper().lstrip('.')
-                            print(f"[DEBUG] Created tempdir for {file_type}: {file_tempdir.name}")
+                            debug_tempdirs.append(
+                                file_tempdir
+                            )  # Prevent GC in debug mode
+                            file_type = (
+                                os.path.splitext(file_path)[1].upper().lstrip(".")
+                            )
+                            print(
+                                f"[DEBUG] Created tempdir for {file_type}: {file_tempdir.name}"
+                            )
                             # Check if markdown file was created
-                            markdown_path = os.path.join(file_tempdir.name, "extracted_content.md")
+                            markdown_path = os.path.join(
+                                file_tempdir.name, "extracted_content.md"
+                            )
                             if os.path.exists(markdown_path):
                                 print(f"[DEBUG] Created markdown: {markdown_path}")
 
                         content = result.get("markdown", "")
                         suggestions = get_suggestions(
-                            content, verbose=args.verbose, file_path=file_path, config=config
+                            content,
+                            verbose=args.verbose,
+                            file_path=file_path,
+                            config=config,
                         )
                         if suggestions:
                             new_name = suggestions[0]
@@ -282,7 +309,10 @@ def main(args=None):
                     else:
                         content = result
                         suggestions = get_suggestions(
-                            content, verbose=args.verbose, file_path=file_path, config=config
+                            content,
+                            verbose=args.verbose,
+                            file_path=file_path,
+                            config=config,
                         )
                         if suggestions:
                             new_name = suggestions[0]  # Use first suggestion in Phase 1
@@ -308,17 +338,19 @@ def main(args=None):
                         tempdir.cleanup()
 
                 # Clean up PDF tempdir if not in debug mode (if it exists in this scope)
-                if 'pdf_tempdir' in locals() and pdf_tempdir is not None:
+                if "pdf_tempdir" in locals() and pdf_tempdir is not None:
                     if args.debug:
                         print(f"[DEBUG] Preserving PDF tempdir: {pdf_tempdir.name}")
                     else:
                         pdf_tempdir.cleanup()
 
                 # Clean up file tempdir if not in debug mode (if it exists in this scope)
-                if 'file_tempdir' in locals() and file_tempdir is not None:
+                if "file_tempdir" in locals() and file_tempdir is not None:
                     if args.debug:
-                        file_type = os.path.splitext(file_path)[1].upper().lstrip('.')
-                        print(f"[DEBUG] Preserving {file_type} tempdir: {file_tempdir.name}")
+                        file_type = os.path.splitext(file_path)[1].upper().lstrip(".")
+                        print(
+                            f"[DEBUG] Preserving {file_type} tempdir: {file_tempdir.name}"
+                        )
                     else:
                         file_tempdir.cleanup()
 
@@ -350,6 +382,8 @@ def save_default_config():
         del config["markitdown"]["llm_model"]
     config["llm_model"] = config.get("llm_model", "gpt-4o")
     config["image_prompt"] = config.get("image_prompt", "")
+    config["min_filename_words"] = config.get("min_filename_words", 5)
+    config["max_filename_words"] = config.get("max_filename_words", 15)
     try:
         with open(config_path, "w") as f:
             toml.dump(config, f)

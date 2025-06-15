@@ -1,6 +1,5 @@
-import os
-import pytest
 from onomatool.renamer import rename_file
+
 
 def test_rename_file_success(tmp_path, monkeypatch):
     src = tmp_path / "original.txt"
@@ -10,6 +9,7 @@ def test_rename_file_success(tmp_path, monkeypatch):
     assert not src.exists()
     assert (tmp_path / "renamed.txt").exists()
 
+
 def test_rename_file_conflict(tmp_path, monkeypatch):
     src = tmp_path / "original.txt"
     src.write_text("data")
@@ -18,6 +18,7 @@ def test_rename_file_conflict(tmp_path, monkeypatch):
     rename_file(str(src), "renamed.txt")
     assert not src.exists()
     assert (tmp_path / "renamed_2.txt").exists()
+
 
 def test_rename_file_extension_preserved(tmp_path, monkeypatch):
     src = tmp_path / "original.md"

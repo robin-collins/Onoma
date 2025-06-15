@@ -8,6 +8,7 @@ beautifulsoup4
 cachetools
 certifi
 cffi
+chardet
 charset-normalizer
 click
 cobble
@@ -76,6 +77,7 @@ speechrecognition
 standard-aifc
 standard-chunk
 sympy
+tiktoken
 toml
 tomli
 tqdm

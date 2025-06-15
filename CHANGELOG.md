@@ -1,5 +1,36 @@
 # Changelog
 
+## [Enhanced UTF-8 Support] - 2025-01-27
+### Added
+- Comprehensive UTF-8 encoding detection and conversion system in MarkitdownProcessor
+- Added automatic encoding detection using chardet library for text files
+- Implemented temporary UTF-8 file conversion for non-UTF-8 encoded text files
+- Added support for detecting and handling multiple text file extensions (.txt, .md, .note, .text, .log, .csv, .json, .xml, .html, .htm, .py, .js, .css, .yaml, .yml)
+- Enhanced error handling with specific UnicodeDecodeError detection and reporting
+- Added debug logging for encoding detection process and temporary file operations
+- Implemented proper cleanup of temporary UTF-8 files after processing
+
+### Fixed
+- Fixed UnicodeDecodeError: 'ascii' codec can't decode byte 0xe2 in position XXXXX error when processing UTF-8 encoded text files
+- Resolved encoding issues with text files containing non-ASCII characters like em dashes, en dashes, curly quotes, and other Unicode symbols
+- Enhanced PlainTextConverter compatibility by ensuring all text files are properly converted to UTF-8 before processing
+
+### Dependencies
+- Added chardet library to requirements.txt for automatic encoding detection
+
+### Testing
+- Created comprehensive test suite for UTF-8 encoding functionality with 13 test cases covering:
+  - Encoding detection for various file types (UTF-8, ASCII, Latin-1, Windows-1252)
+  - Temporary file creation and cleanup for non-UTF-8 files
+  - Edge cases like empty files, low confidence detection, and error handling
+  - Full process workflow integration with encoding conversion
+- All tests pass successfully, validating the robustness of the encoding detection system
+
+## [Fixed] - 2025-01-27
+### Fixed
+- Fixed PPTX processing error where subprocess result was overwriting the original MarkItDown result, causing `'CompletedProcess' object has no attribute 'text_content'` error
+- Changed subprocess variable names from `result` to `soffice_result` and `convert_result` to avoid variable collision with MarkItDown result
+
 ## [Documentation Update] - 2025-01-27
 ### Updated
 - Completely rewrote README.md to accurately reflect current application features and functionality
@@ -88,3 +119,60 @@
 ## [Added] - 2025-06-17
 - Added end user usage tests in tests/test_usage_enduser.py for CLI, --config, dry-run, interactive, debug, and config override features. Tests use pytest and mock LLM responses.
 - Added test_files/mock_config.toml for use in tests, with static LLM responses and simple prompts.
+
+## [0.1.0] - 2024-12-19
+
+### Added
+- Initial release of OnomaTool
+- Support for processing PDFs, DOCX, PPTX, SVG, and text files using MarkItDown
+- PDF to image conversion with PyMuPDF
+- PPTX to image conversion via LibreOffice and ImageMagick
+- SVG to PNG conversion with Cairo
+- CLI interface with multiple output format options (JSON, YAML, text)
+- Comprehensive UTF-8 encoding detection and handling system
+- Automatic encoding detection using chardet library with confidence scoring
+- Smart UTF-8 conversion for files misidentified as Windows-1252
+- Enhanced error handling for Unicode decode errors
+- **MAJOR FIX**: Complete resolution of MarkItDown PlainTextConverter encoding issues
+  - Added direct text processing fallback for text files when MarkItDown fails with Unicode errors
+  - Comprehensive support for `.txt`, `.md`, `.note`, `.text`, `.log`, `.csv`, `.json`, `.xml`, `.html`, `.htm`, `.py`, `.js`, `.css`, `.yaml`, `.yml` files
+  - Graceful handling of UTF-8 files with special characters (em dashes, smart quotes, etc.)
+  - Automatic temp file cleanup and proper error propagation
+- **NEW**: Token limit control for LLM responses
+  - Added `MAX_TOKENS = 100` constant to limit LLM response length
+  - Applied to both OpenAI and Google Generative AI providers
+  - Ensures efficient and consistent response sizes for filename suggestions
+- **IMPROVED**: Configurable word count limits for all naming conventions
+  - **NEW CONFIG OPTIONS**: `min_filename_words` (default: 5) and `max_filename_words` (default: 15)
+  - Enforces minimum 5 words to ensure descriptive filenames (no more 1-4 word suggestions)
+  - Maximum 15 words to prevent overly long filenames
+  - Applies to all naming conventions: snake_case, kebab-case, camelCase, PascalCase, dot.notation, natural language
+  - Dynamic JSON schema generation based on config values
+  - Configurable via `~/.onomarc` file: set custom ranges like `min_filename_words = 3` and `max_filename_words = 20`
+
+### Dependencies
+- markitdown: Document conversion
+- chardet: Automatic encoding detection
+- PyMuPDF (fitz): PDF processing
+- Pillow: Image processing
+- python-magic: File type detection
+- pyyaml: YAML output support
+- System dependencies: LibreOffice, ImageMagick, Cairo libraries
+
+### Testing
+- Comprehensive test suite for UTF-8 encoding detection and conversion
+- 13 test cases covering various encoding scenarios and edge cases
+- Real-world validation with problematic .note files containing Unicode characters
+- Successful processing of files with en dashes (–), em dashes (—), and other Unicode symbols
+
+### Fixed
+- UnicodeDecodeError: 'ascii' codec can't decode byte 0xe2 (en dash character)
+- UnicodeDecodeError: 'charmap' codec can't decode various Unicode sequences
+- MarkItDown PlainTextConverter internal encoding limitations
+- Windows-1252 vs UTF-8 encoding detection conflicts
+- Temporary file cleanup issues during encoding error handling
+
+### Performance
+- Encoding detection with confidence thresholds (0.7 minimum)
+- Efficient temp file management with automatic cleanup
+- Fallback processing chain for maximum compatibility

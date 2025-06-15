@@ -33,6 +33,7 @@
 └── tests/
     ├── __init__.py
     ├── test_usage_enduser.py     # End-to-end user scenario tests
+    ├── test_utf8_encoding.py     # UTF-8 encoding detection and conversion tests
     └── test_files/
         └── mock_config.toml      # Test configuration with mock LLM responses
 ```
@@ -44,16 +45,19 @@
 
 ### Configuration System
 - **`src/onomatool/config.py`**: Handles `.onomarc` TOML configuration loading with fallback to defaults
+  - New options: `min_filename_words` (default: 5) and `max_filename_words` (default: 15)
+  - Configurable word count limits for all naming conventions
 - **`src/onomatool/prompts.py`**: Centralized prompt management with configurable system/user/image prompts
 
 ### File Processing Pipeline
 - **`src/onomatool/file_collector.py`**: Glob pattern matching for file discovery
 - **`src/onomatool/file_dispatcher.py`**: Routes files to appropriate processors based on file type
-- **`src/onomatool/processors/markitdown_processor.py`**: Primary processor using Markitdown library with special handling for:
+- **`src/onomatool/processors/markitdown_processor.py`**: Primary processor using Markitdown library with UTF-8 encoding support and special handling for:
+  - Text files: Automatic encoding detection and UTF-8 conversion using chardet
   - PDF files: Extract markdown + generate page images via PyMuPDF
   - PPTX files: Extract markdown + generate slide images via LibreOffice/ImageMagick
-  - DOCX, XLSX, TXT files: Direct Markitdown processing
-  - Debug mode support with temp file preservation
+  - DOCX, XLSX, TXT files: Direct Markitdown processing with encoding safety
+  - Debug mode support with temp file preservation and encoding diagnostics
 - **`src/onomatool/processors/text_processor.py`**: Lightweight processor for simple text files
 
 ### LLM Integration
@@ -61,8 +65,11 @@
   - OpenAI API integration with local endpoint support
   - Google Gemini API integration
   - Image processing (base64 encoding for OpenAI)
-  - JSON schema-based filename suggestions
+  - JSON schema-based filename suggestions with dynamic pattern generation
   - SSL handling for local/HTTP endpoints
+  - Token limit control: `MAX_TOKENS = 100` constant for response length control
+  - Consistent token limiting across both OpenAI and Google providers
+  - Configurable word count limits: `generate_schema_patterns()` function creates schemas based on `min_filename_words` and `max_filename_words`
 
 ### Utilities
 - **`src/onomatool/utils/image_utils.py`**: SVG-to-PNG conversion with Cairo/Pillow, maintaining aspect ratio at max 1024px
@@ -72,6 +79,14 @@
 - **`src/onomatool/renamer.py`**: Executes file renaming with conflict resolution
 
 ## Special Processing Workflows
+
+### Text File Encoding Handling
+1. Automatic encoding detection using chardet library for text files
+2. Supported text extensions: .txt, .md, .note, .text, .log, .csv, .json, .xml, .html, .htm, .py, .js, .css, .yaml, .yml
+3. Create temporary UTF-8 copies for non-UTF-8 files with graceful error handling
+4. Preserve original files unchanged while processing UTF-8 versions
+5. Automatic cleanup of temporary files after processing
+6. Debug mode provides encoding detection diagnostics
 
 ### SVG Files
 1. Convert to PNG using `convert_svg_to_png` utility

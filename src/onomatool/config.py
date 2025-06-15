@@ -10,6 +10,8 @@ DEFAULT_CONFIG = {
     "google_api_key": "",
     "naming_convention": "snake_case",
     "llm_model": "gpt-4o",
+    "min_filename_words": 5,
+    "max_filename_words": 15,
     "system_prompt": "",
     "user_prompt": "",
     "image_prompt": "",
@@ -20,7 +22,7 @@ DEFAULT_CONFIG = {
 }
 
 
-def get_config(config_path: str = None) -> dict[str, Any]:
+def get_config(config_path: str | None = None) -> dict[str, Any]:
     """
     Load configuration from the given config_path or from ~/.onomarc if not specified.
     Returns the config as a dict, or DEFAULT_CONFIG if loading fails.
@@ -33,6 +35,6 @@ def get_config(config_path: str = None) -> dict[str, Any]:
         try:
             with open(config_path) as f:
                 return toml.load(f)
-        except Exception as e:
-            print(f"Error loading config: {e}. Using defaults")
+        except Exception:
+            pass
     return DEFAULT_CONFIG

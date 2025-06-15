@@ -23,17 +23,28 @@ onomatool = "onomatool.cli:main"
 
 [tool.ruff]
 line-length = 88
-exclude = [".venv", "venv", "migrations"]
+indent-width = 4
 target-version = "py311"
-select = ["E", "F", "W", "I", "N", "UP", "B", "C4", "SIM", "TID"]
-ignore = ["E501"]
 
-[tool.ruff.isort]
+# Minimal exclude patterns
+exclude = [
+    ".git",
+    ".venv",
+    "__pycache__",
+    "*.pyc",
+]
+
+[tool.ruff.lint]
+# Basic rules plus import sorting and some useful quality checks
+select = ["E", "F", "W", "I", "B", "UP", "C4"]
+ignore = [
+    "E501",   # line-too-long (let formatter handle this)
+]
+
+[tool.ruff.lint.isort]
 known-first-party = ["onomatool"]
-known-third-party = ["cairosvg", "PIL", "fitz", "pptx", "toml"]
-
-[tool.ruff.per-file-ignores]
-"tests/*" = ["D100", "D101", "D102", "D103", "D104", "D105", "D106", "D107"]
+combine-as-imports = true
+split-on-trailing-comma = true
 
 [tool.ruff.format]
 quote-style = "double"

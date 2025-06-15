@@ -29,4 +29,3 @@ def rename_file(original_path: str, new_name: str) -> None:
 
     # Perform the rename
     shutil.move(original_path, final_path)
-    print(f"Renamed '{os.path.basename(original_path)}' to '{final_name}'")
