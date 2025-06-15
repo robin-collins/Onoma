@@ -1,5 +1,3 @@
-
-
 class TextProcessor:
     """Processor for text files (.txt, .md)"""
 

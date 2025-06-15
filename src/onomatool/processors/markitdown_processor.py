@@ -11,8 +11,6 @@ try:
 except ImportError:
     fitz = None
 try:
-    import io
-
     from PIL import Image, ImageDraw
     from pptx import Presentation
 except ImportError:
