@@ -110,3 +110,9 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 .specstory/
+references/
+test_files/
+.venv/
+.ruff_cache/
+.cursor/
+.cursorignore
