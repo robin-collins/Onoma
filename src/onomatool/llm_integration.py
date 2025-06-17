@@ -220,20 +220,17 @@ def get_suggestions(
 
     # MOCK PROVIDER: Always return static suggestions for tests
     if provider == "mock":
-        if naming_convention == "snake_case":
-            return ["mock_file_one", "mock_file_two", "mock_file_three"]
-        elif naming_convention == "camelCase":
-            return ["mockFileOne", "mockFileTwo", "mockFileThree"]
-        elif naming_convention == "kebab-case":
-            return ["mock-file-one", "mock-file-two", "mock-file-three"]
-        elif naming_convention == "PascalCase":
-            return ["MockFileOne", "MockFileTwo", "MockFileThree"]
-        elif naming_convention == "dot.notation":
-            return ["mock.file.one", "mock.file.two", "mock.file.three"]
-        elif naming_convention == "natural language":
-            return ["Mock File One", "Mock File Two", "Mock File Three"]
-        else:
-            return ["mock_file_one", "mock_file_two", "mock_file_three"]
+        mapping = {
+            "snake_case": ["mock_file_one", "mock_file_two", "mock_file_three"],
+            "camelCase": ["mockFileOne", "mockFileTwo", "mockFileThree"],
+            "kebab-case": ["mock-file-one", "mock-file-two", "mock-file-three"],
+            "PascalCase": ["MockFileOne", "MockFileTwo", "MockFileThree"],
+            "dot.notation": ["mock.file.one", "mock.file.two", "mock.file.three"],
+            "natural language": ["Mock File One", "Mock File Two", "Mock File Three"],
+        }
+        return mapping.get(
+            naming_convention, ["mock_file_one", "mock_file_two", "mock_file_three"]
+        )
 
     if provider == "openai":
         try:

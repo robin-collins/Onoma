@@ -40,9 +40,10 @@ class MarkitdownProcessor:
         """
         self.config = config
         self.debug = debug
+        docintel_endpoint = config.get("docintel_endpoint")
         self.md = MarkItDown(
             enable_plugins=config.get("enable_plugins", False),
-            docintel_endpoint=config.get("docintel_endpoint", ""),
+            docintel_endpoint=docintel_endpoint or None,
             llm_model=config.get("llm_model", "gpt-4o"),
         )
 
@@ -61,7 +62,9 @@ class MarkitdownProcessor:
                 if self.debug:
                     # Create a regular temp directory that won't auto-cleanup
                     tempdir_path = tempfile.mkdtemp(prefix="onoma_pdf_")
-                    tempdir = type('TempDir', (), {'name': tempdir_path, 'cleanup': lambda: None})()
+                    tempdir = type(
+                        "TempDir", (), {"name": tempdir_path, "cleanup": lambda: None}
+                    )()
                 else:
                     tempdir = tempfile.TemporaryDirectory()
                 doc = fitz.open(file_path)
@@ -88,7 +91,9 @@ class MarkitdownProcessor:
                 if self.debug:
                     # Create a regular temp directory that won't auto-cleanup
                     tempdir_path = tempfile.mkdtemp(prefix="onoma_pptx_")
-                    tempdir = type('TempDir', (), {'name': tempdir_path, 'cleanup': lambda: None})()
+                    tempdir = type(
+                        "TempDir", (), {"name": tempdir_path, "cleanup": lambda: None}
+                    )()
                 else:
                     tempdir = tempfile.TemporaryDirectory()
                 try:
@@ -136,7 +141,9 @@ class MarkitdownProcessor:
 
                     # Save markdown content to file in debug mode
                     if self.debug:
-                        markdown_path = os.path.join(tempdir.name, "extracted_content.md")
+                        markdown_path = os.path.join(
+                            tempdir.name, "extracted_content.md"
+                        )
                         with open(markdown_path, "w", encoding="utf-8") as f:
                             f.write(result.text_content)
 
@@ -153,7 +160,9 @@ class MarkitdownProcessor:
                 # But save markdown content in debug mode
                 if self.debug and result.text_content:
                     tempdir_path = tempfile.mkdtemp(prefix="onoma_svg_md_")
-                    tempdir = type('TempDir', (), {'name': tempdir_path, 'cleanup': lambda: None})()
+                    tempdir = type(
+                        "TempDir", (), {"name": tempdir_path, "cleanup": lambda: None}
+                    )()
                     markdown_path = os.path.join(tempdir.name, "extracted_content.md")
                     with open(markdown_path, "w", encoding="utf-8") as f:
                         f.write(result.text_content)
@@ -165,9 +174,11 @@ class MarkitdownProcessor:
             else:
                 # For all other file types (docx, txt, etc.), save markdown in debug mode
                 if self.debug and result.text_content:
-                    file_ext = ext.lstrip('.')
+                    file_ext = ext.lstrip(".")
                     tempdir_path = tempfile.mkdtemp(prefix=f"onoma_{file_ext}_")
-                    tempdir = type('TempDir', (), {'name': tempdir_path, 'cleanup': lambda: None})()
+                    tempdir = type(
+                        "TempDir", (), {"name": tempdir_path, "cleanup": lambda: None}
+                    )()
                     markdown_path = os.path.join(tempdir.name, "extracted_content.md")
                     with open(markdown_path, "w", encoding="utf-8") as f:
                         f.write(result.text_content)
