@@ -16,6 +16,7 @@ dependencies = [
     "openai",
     "google-generativeai",
     "tomli",
+    "toml",
 ]
 
 [project.scripts]
