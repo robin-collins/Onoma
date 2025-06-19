@@ -26,7 +26,9 @@ def get_image_prompt(naming_convention: str, config=None) -> str:
     return template.format(naming_convention=naming_convention)
 
 
-DEFAULT_SYSTEM_PROMPT = "You are a file naming suggestion assistant."
+DEFAULT_SYSTEM_PROMPT = (
+    "You are a file naming suggestion assistant who avoids using numbers in file names."
+)
 
 DEFAULT_USER_PROMPT = (
     "You are an expert file naming assistant. Your task is to suggest 3 file names for the "
@@ -34,12 +36,19 @@ DEFAULT_USER_PROMPT = (
     "as specified in the JSON schema. When providing suggestions consider the who, what, when, "
     "where, why, and how of the file content, its purpose or inteded use. A good file name should "
     "be concise, descriptive, and easy to understand and be between five and ten words in length. "
-    "Take note of indicators of the file content, such as the date, time, location, and other "
-    "relevant information like chat transcripts, source code bundles, file lists or file tree's. "
-    "Avoid assumptions unless other indicators are ambiguous or not present. Content that is "
-    "multiple files listed inside markdown triple backticks or inside XML tags is a codebase "
-    "prepared for ingestion by an LLM, attempt to identify the project or codebase name where "
-    "possible.\n\nCONTENT:\n{content}"
+    "Take note of indicators of the file content, such as the who, what, where, when, why, and "
+    "how, and other relevant information like chat transcripts, source code bundles, file lists "
+    "or file tree's. Avoid assumptions unless other indicators are ambiguous or not present."
+    "Content that is multiple files listed inside markdown triple backticks or inside XML tags "
+    "is a codebase prepared for ingestion by an LLM, attempt to identify the project or codebase"
+    "name where possible.\n\n"
+    "IMPORTANT: DO NOT INCLUDE Numbers in the file name UNLESS absolutely critical to identify"
+    "the content, hen including numbers (dates, times, IDs), keep digit sequences reasonable - "
+    "use formats like '20250101' or 'v123' rather than extremely long number sequences like "
+    "'123456789101112131415'. Prefer readable date formats and concise identifiers.\n\n"
+    "Unless the numbers have specific meaning to the content, and aid in its identification"
+    "do not include them in the file name.\n\n"
+    "CONTENT:\n{content}"
 )
 
 DEFAULT_IMAGE_PROMPT = (
@@ -62,7 +71,10 @@ DEFAULT_IMAGE_PROMPT = (
     "(brands, locations, applications, products)\n2. Be descriptive about visual content and context\n3. "
     "Include relevant details (setting, activity, style, technical type)\n4. Be between five and ten words "
     "in length\n5. Consider the who, what, when, where, why, and how of the visual content\n6. Use clear, "
-    "descriptive terminology\n7. Balance specificity with broad applicability\n\n## Image-Specific "
+    "descriptive terminology\n7. Balance specificity with broad applicability\n8. **IMPORTANT**: When "
+    "including numbers (dates, times, model numbers, IDs), keep digit sequences reasonable - use formats "
+    "like '20250101' or 'v123' rather than extremely long number sequences. Prefer readable date formats "
+    "and concise identifiers.\n\n## Image-Specific "
     "Considerations:\n- For screenshots: Include application name if identifiable, interface type, or "
     "function\n- For photographs: Include subject, setting, activity, or notable visual elements\n- For "
     "diagrams/charts: Include data type, purpose, or subject matter\n- For documents: Include document type, "

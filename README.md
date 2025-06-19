@@ -17,6 +17,8 @@
 - CLI with dry-run, interactive, verbose, and debug modes 🖥️
 - Configurable via `.onomarc` TOML config file ⚙️
 - Uses Markitdown for unified file processing 📝
+- **NEW**: Advanced UTF-8 encoding detection and conversion for text files 🔤
+- **NEW**: Configurable word count limits for filenames 🔤
 
 ---
 
@@ -33,9 +35,10 @@
 - 📄 **PDF Files**: Extract markdown content + generate images for each page
 - 🖼️ **SVG Files**: Convert to PNG for AI analysis (enforced PNG-only processing)
 - 📊 **PPTX Files**: Extract content + generate images for each slide using LibreOffice
-- 📝 **Text Files**: Direct markdown and text processing
+- 📝 **Text Files**: UTF-8 encoding detection and conversion + markdown processing
 - 🖼️ **Image Files**: Base64 encoding for direct AI image analysis
 - 📑 **Office Documents**: DOCX, XLSX support via Markitdown
+- 🔤 **Unicode Support**: Automatic encoding detection for text files with chardet
 
 ### CLI Modes
 - 🧪 **Dry-Run Mode**: Preview changes without modifying files (`--dry-run`)
@@ -50,6 +53,8 @@
 - 🌐 **Local LLM Support**: Works with local OpenAI-compatible endpoints
 - 📊 **Multiple Naming Conventions**: snake_case, CamelCase, kebab-case, and more
 - 🛡️ **SSL Flexibility**: Automatic SSL handling for local/HTTP endpoints
+- 🔤 **Encoding Intelligence**: Automatic detection and UTF-8 conversion for text files
+- 🧪 **Comprehensive Testing**: 13+ test cases for encoding reliability
 
 ---
 
@@ -68,6 +73,9 @@ source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 # Install dependencies
 pip install -r requirements.txt
 
+# For encoding detection (included in requirements.txt)
+pip install chardet
+
 # Install the package
 pip install -e .
 ```
@@ -83,12 +91,13 @@ For full functionality (SVG, PDF, PPTX processing):
 ```bash
 # Ubuntu/Debian
 sudo apt-get update
-sudo apt-get install libreoffice imagemagick
+sudo apt-get install libreoffice imagemagick libcairo2 libpango-1.0-0 libpangocairo-1.0-0
 
 # macOS (with Homebrew)
-brew install libreoffice imagemagick
+brew install libreoffice imagemagick cairo pango
 
 # Windows: Download and install LibreOffice and ImageMagick
+# For SVG support: pip install cairosvg (requires Cairo system libraries)
 ```
 
 ---
@@ -160,6 +169,10 @@ image_prompt = "Suggest 3 file names for this image."
 [markitdown]
 enable_plugins = false
 docintel_endpoint = ""
+
+# Word count limits (NEW!)
+min_filename_words = 5      # Minimum words required (ensures descriptive names)
+max_filename_words = 15     # Maximum words allowed (prevents overly long names)
 ```
 
 ### Supported Naming Conventions
@@ -181,8 +194,10 @@ docintel_endpoint = ""
 | SVG | Convert to PNG + Markitdown | Image analysis only |
 | Images (JPG, PNG, etc.) | Base64 encoding | Direct image analysis |
 | DOCX | Markitdown processing | Text analysis |
-| TXT, MD | Direct text processing | Text analysis |
+| TXT, MD, NOTE | UTF-8 encoding detection + text processing | Text analysis |
 | XLSX | Markitdown processing | Content analysis |
+| CSV, JSON, XML, HTML | UTF-8 encoding detection + Markitdown | Content analysis |
+| Code Files (PY, JS, CSS, YAML) | UTF-8 encoding detection + text processing | Code analysis |
 
 ---
 
@@ -213,6 +228,10 @@ pip install pytest pytest-mock
 
 # Run all tests
 pytest
+
+# Run specific test suites
+pytest tests/test_usage_enduser.py    # End-to-end user tests
+pytest tests/test_utf8_encoding.py    # UTF-8 encoding tests
 
 # Run with coverage
 pytest --cov=onomatool
@@ -264,6 +283,8 @@ onomatool 'images/*' --format image
 - **Dry-Run Mode**: Preview all changes before execution
 - **Temp File Management**: Automatic cleanup (preservable in debug mode)
 - **Error Handling**: Graceful failure with clear error messages
+- **Encoding Safety**: Automatic UTF-8 conversion preserves original files
+- **Unicode Compatibility**: Handles em dashes, smart quotes, accented characters
 
 ---
 
@@ -290,6 +311,10 @@ pip install -e .
 
 # Install development dependencies
 pip install pytest pytest-mock ruff
+
+# Run tests to verify setup
+pytest tests/test_utf8_encoding.py
+pytest tests/test_usage_enduser.py
 ```
 
 ---
@@ -322,6 +347,15 @@ A: SVGs are converted to PNG images before AI analysis for better results.
 
 **Q: Can I see what the AI is thinking?**
 A: Use `--verbose` to see full LLM requests and responses.
+
+**Q: What about files with special characters or different encodings?**
+A: OnomaTool automatically detects and converts file encodings to UTF-8, handling em dashes, accented characters, and other Unicode symbols seamlessly.
+
+**Q: Does it work with files that have encoding issues?**
+A: Yes! The tool uses advanced encoding detection to identify and convert problematic files while preserving the original content.
+
+**Q: How do word count limits affect filename generation?**
+A: Word count limits control the minimum and maximum number of words in generated filenames. This helps maintain descriptive and concise naming conventions.
 
 ---
 

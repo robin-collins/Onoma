@@ -1,4 +1,3 @@
-from .config import get_config
 from .processors.markitdown_processor import MarkitdownProcessor
 from .processors.text_processor import TextProcessor
 
@@ -9,10 +8,35 @@ class FileDispatcher:
     def __init__(self, config: dict, debug: bool = False):
         self.config = config
         self.debug = debug
-        self.processors: dict[str, object] = {
-            ".txt": TextProcessor(),
-            ".md": TextProcessor(),
+
+        # Text file extensions that should be processed directly without MarkItDown
+        self.text_extensions = {
+            ".txt",
+            ".md",
+            ".note",
+            ".text",
+            ".log",
+            ".csv",
+            ".json",
+            ".xml",
+            ".html",
+            ".htm",
+            ".py",
+            ".js",
+            ".css",
+            ".yaml",
+            ".yml",
+            ".toml",
+            ".ini",
+            ".cfg",
         }
+
+        self.processors: dict[str, object] = {}
+        # Initialize text processor for all text extensions
+        text_processor = TextProcessor()
+        for ext in self.text_extensions:
+            self.processors[ext] = text_processor
+
         # Initialize markitdown processor for other formats
         self.markitdown_processor = MarkitdownProcessor(
             self.config.get("markitdown", {}), debug=debug
@@ -20,11 +44,16 @@ class FileDispatcher:
 
     def get_processor(self, file_path: str) -> object:
         """Get appropriate processor for the given file"""
-        if file_path.endswith((".txt", ".md")):
-            return self.processors[file_path[file_path.rfind(".") :]]
-        else:
-            # Use markitdown for all other supported formats
-            return self.markitdown_processor
+        # Get file extension
+        from pathlib import Path
+
+        file_ext = Path(file_path).suffix.lower()  # '' when no suffix
+
+        # Check if it's a text file
+        if file_ext in self.text_extensions:
+            return self.processors[file_ext]
+        # Use markitdown for all other supported formats
+        return self.markitdown_processor
 
     def process(self, file_path: str):
         """Process a file using the appropriate processor"""

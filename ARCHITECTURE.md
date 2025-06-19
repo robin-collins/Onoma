@@ -48,7 +48,7 @@ sequenceDiagram
       "maxItems": 3,
       "items": {
         "type": "string",
-        "pattern": "^[a-z0-9]+(_[a-z0-9]+)*$",
+        "pattern": "^[a-z0-9]+(_[a-z0-9]+){0,14}$",
         "maxLength": 128
       }
     }
@@ -71,7 +71,7 @@ sequenceDiagram
       "maxItems": 3,
       "items": {
         "type": "string",
-        "pattern": "^[a-z]+(?:[A-Z][a-z0-9]*)*$",
+        "pattern": "^[a-z]+(?:[A-Z][a-z0-9]*){0,14}$",
         "maxLength": 128
       }
     }
