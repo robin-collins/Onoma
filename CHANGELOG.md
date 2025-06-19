@@ -1,5 +1,78 @@
 # Changelog
 
+## [PyPI Package Ready] - 2025-01-27
+### Added
+- **Complete PyPI packaging setup** for professional distribution
+- **MIT License** with proper copyright attribution
+- **Comprehensive pyproject.toml** with full metadata, classifiers, and dependencies
+- **Console script entry point** (`onomatool` command) for system-wide CLI installation
+- **Build automation scripts** with `uv` package manager support:
+  - `scripts/build.sh` - Uses project `.venv` and `uv` for fast dependency management
+  - `scripts/test_install.sh` - Isolated testing with temporary venv and `uv` installation
+- **MANIFEST.in** for proper file inclusion in distributions
+- **Optional development dependencies** for contributors
+- **Project URLs** for homepage, repository, documentation, and bug tracker
+- **Version constraints** on all dependencies for stability
+- **Platform and Python version classifiers** for compatibility information
+
+### Changed
+- **CLI entry point** now uses proper `console_script()` function for packaging
+- **Dependencies** now include all required packages with minimum version constraints
+- **Project structure** optimized for PyPI distribution standards
+
+## [Pydantic Structured Output & Azure OpenAI Support] - 2025-01-27
+### Added
+- **Pydantic Models for Structured Output**: Complete migration from raw JSON schemas to type-safe Pydantic models
+  - Created `src/onomatool/models.py` with Pydantic models for all naming conventions
+  - Individual models for each naming convention with format validation:
+    - `SnakeCaseFilenameSuggestions` - Validates snake_case format
+    - `CamelCaseFilenameSuggestions` - Validates camelCase format
+    - `KebabCaseFilenameSuggestions` - Validates kebab-case format
+    - `PascalCaseFilenameSuggestions` - Validates PascalCase format
+    - `DotNotationFilenameSuggestions` - Validates dot.notation format
+    - `NaturalLanguageFilenameSuggestions` - Validates natural language format
+  - Automatic JSON schema generation from Pydantic models for fallback compatibility
+  - Built-in validation ensuring exactly 3 suggestions with proper format constraints
+- **OpenAI Structured Output Integration**: Uses `client.beta.chat.completions.parse()` with Pydantic models
+  - Primary method uses OpenAI's structured output feature with Pydantic response_format
+  - Automatic fallback to traditional JSON schema if structured output fails
+  - Enhanced debugging showing which approach (Pydantic vs JSON schema) was used
+- Comprehensive Azure OpenAI integration support alongside standard OpenAI
+- Added new configuration options for Azure OpenAI:
+  - `use_azure_openai` - Boolean flag to enable Azure OpenAI instead of standard OpenAI
+  - `azure_openai_endpoint` - Azure OpenAI resource endpoint URL
+  - `azure_openai_api_key` - Azure OpenAI API key (also supports AZURE_OPENAI_API_KEY env var)
+  - `azure_openai_api_version` - API version for Azure OpenAI (default: "2024-02-01")
+  - `azure_openai_deployment` - Azure deployment name (also supports AZURE_OPENAI_DEPLOYMENT env var)
+- Automatic Azure deployment name handling (uses deployment name as model parameter)
+- Environment variable support for Azure OpenAI configuration
+- Enhanced verbose mode output showing Azure vs standard OpenAI configuration details
+- Created comprehensive Azure OpenAI setup guide (AZURE_OPENAI_SETUP.md) with:
+  - Step-by-step configuration instructions
+  - Environment variable setup
+  - Deployment vs model name explanations
+  - Development/production configuration examples
+  - Troubleshooting guide and security best practices
+
+### Enhanced
+- **Type Safety**: All LLM responses now validated through Pydantic models with proper error handling
+- **Maintainability**: Replaced complex regex-based JSON schemas with clean, readable Pydantic model definitions
+- **Debugging**: Enhanced verbose mode shows Pydantic model names and validation results
+- Updated LLM integration to seamlessly switch between standard OpenAI and Azure OpenAI based on configuration
+- Improved error handling with specific Azure OpenAI validation messages
+- Enhanced verbose debugging to show which provider is being used and configuration details
+- Configuration saving automatically includes new Azure OpenAI options
+
+### Technical Changes
+- Replaced `generate_schema_patterns()` function with `get_pydantic_model_and_schema()`
+- Added `generate_json_schema_from_model()` utility for backward compatibility
+- LLM integration now tries structured output first, falls back to JSON schema on failure
+- All naming convention validation moved from regex patterns to Pydantic field validators
+
+### Dependencies
+- Azure OpenAI support uses the same openai Python package with AzureOpenAI client
+- Pydantic already included in requirements.txt for robust data validation
+
 ## [Enhanced UTF-8 Support] - 2025-01-27
 ### Added
 - Comprehensive UTF-8 encoding detection and conversion system in MarkitdownProcessor

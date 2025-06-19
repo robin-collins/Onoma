@@ -52,7 +52,13 @@ def main(args=None):
             "-v",
             "--verbose",
             action="store_true",
-            help="Print LLM request and response for debugging",
+            help="Print basic LLM debugging information",
+        )
+        parser.add_argument(
+            "-vv",
+            "--very-verbose",
+            action="store_true",
+            help="Print detailed LLM request and response for debugging",
         )
         parser.add_argument(
             "-d",
@@ -93,6 +99,14 @@ def main(args=None):
 
         if args.interactive and not args.dry_run:
             parser.error("--interactive must be used with --dry-run")
+
+        # Handle verbosity levels
+        if args.very_verbose:
+            verbose_level = 2  # Very verbose
+        elif args.verbose:
+            verbose_level = 1  # Basic verbose
+        else:
+            verbose_level = 0  # No verbose output
 
         config = get_config(args.config)
         files = collect_files(args.pattern)
@@ -138,7 +152,10 @@ def main(args=None):
                     # Always use PNG for all LLM input for SVGs
                     all_image_suggestions = []
                     img_suggestions = get_suggestions(
-                        "", verbose=args.verbose, file_path=png_path, config=config
+                        "",
+                        verbose_level=verbose_level,
+                        file_path=png_path,
+                        config=config,
                     )
                     if img_suggestions:
                         all_image_suggestions.append(img_suggestions)
@@ -149,7 +166,7 @@ def main(args=None):
                         result
                         if isinstance(result, str)
                         else result.get("markdown", ""),
-                        verbose=args.verbose,
+                        verbose_level=verbose_level,
                         file_path=png_path,
                         config=config,
                     )
@@ -165,7 +182,7 @@ def main(args=None):
                     )
                     final_suggestions = get_suggestions(
                         final_prompt,
-                        verbose=args.verbose,
+                        verbose_level=verbose_level,
                         file_path=png_path,
                         config=config,
                     )
@@ -180,9 +197,12 @@ def main(args=None):
                         existing_files = os.listdir(directory)
                         final_name = resolve_conflict(new_name_with_ext, existing_files)
                         if args.dry_run:
-                            print(f"{os.path.basename(file_path)} --> {final_name}")
+                            print(
+                                f"{os.path.basename(file_path)} --dry-run-> {final_name}"
+                            )
                             planned_renames.append((file_path, new_name))
                         else:
+                            print(f"{os.path.basename(file_path)} --> {final_name}")
                             rename_file(file_path, new_name)
                 else:
                     # Non-SVG logic unchanged
@@ -212,7 +232,7 @@ def main(args=None):
                         for img_path in images:
                             img_suggestions = get_suggestions(
                                 "",
-                                verbose=args.verbose,
+                                verbose_level=verbose_level,
                                 file_path=img_path,
                                 config=config,
                             )
@@ -224,7 +244,7 @@ def main(args=None):
                         md_file_path = images[0] if len(images) > 0 else file_path
                         md_suggestions = get_suggestions(
                             result["markdown"],
-                            verbose=args.verbose,
+                            verbose_level=verbose_level,
                             file_path=md_file_path,
                             config=config,
                         )
@@ -240,7 +260,7 @@ def main(args=None):
                         )
                         final_suggestions = get_suggestions(
                             final_prompt,
-                            verbose=args.verbose,
+                            verbose_level=verbose_level,
                             file_path=md_file_path,
                             config=config,
                         )
@@ -260,9 +280,12 @@ def main(args=None):
                                 new_name_with_ext, existing_files
                             )
                             if args.dry_run:
-                                print(f"{os.path.basename(file_path)} --> {final_name}")
+                                print(
+                                    f"{os.path.basename(file_path)} --dry-run-> {final_name}"
+                                )
                                 planned_renames.append((file_path, new_name))
                             else:
+                                print(f"{os.path.basename(file_path)} --> {final_name}")
                                 rename_file(file_path, new_name)
                     elif isinstance(result, dict) and "tempdir" in result:
                         # Handle files with tempdir but no images (text files, Word docs, etc. in debug mode)
@@ -287,7 +310,7 @@ def main(args=None):
                         content = result.get("markdown", "")
                         suggestions = get_suggestions(
                             content,
-                            verbose=args.verbose,
+                            verbose_level=verbose_level,
                             file_path=file_path,
                             config=config,
                         )
@@ -302,15 +325,18 @@ def main(args=None):
                                 new_name_with_ext, existing_files
                             )
                             if args.dry_run:
-                                print(f"{os.path.basename(file_path)} --> {final_name}")
+                                print(
+                                    f"{os.path.basename(file_path)} --dry-run-> {final_name}"
+                                )
                                 planned_renames.append((file_path, new_name))
                             else:
+                                print(f"{os.path.basename(file_path)} --> {final_name}")
                                 rename_file(file_path, new_name)
                     else:
                         content = result
                         suggestions = get_suggestions(
                             content,
-                            verbose=args.verbose,
+                            verbose_level=verbose_level,
                             file_path=file_path,
                             config=config,
                         )
@@ -325,9 +351,12 @@ def main(args=None):
                                 new_name_with_ext, existing_files
                             )
                             if args.dry_run:
-                                print(f"{os.path.basename(file_path)} --> {final_name}")
+                                print(
+                                    f"{os.path.basename(file_path)} --dry-run-> {final_name}"
+                                )
                                 planned_renames.append((file_path, new_name))
                             else:
+                                print(f"{os.path.basename(file_path)} --> {final_name}")
                                 rename_file(file_path, new_name)
             finally:
                 # Clean up SVG tempdir if not in debug mode
@@ -358,6 +387,13 @@ def main(args=None):
             confirm = input("\nProceed with these renames? [y/N]: ").strip().lower()
             if confirm == "y":
                 for file_path, new_name in planned_renames:
+                    directory = os.path.dirname(file_path) or "."
+                    _, ext = os.path.splitext(file_path)
+                    base_new_name, _ = os.path.splitext(new_name)
+                    new_name_with_ext = base_new_name + ext
+                    existing_files = os.listdir(directory)
+                    final_name = resolve_conflict(new_name_with_ext, existing_files)
+                    print(f"{os.path.basename(file_path)} --> {final_name}")
                     rename_file(file_path, new_name)
             else:
                 print("Aborted. No files were renamed.")
@@ -392,5 +428,10 @@ def save_default_config():
         sys.exit(1)
 
 
-if __name__ == "__main__":
+def console_script():
+    """Entry point for console_scripts."""
     sys.exit(main())
+
+
+if __name__ == "__main__":
+    console_script()

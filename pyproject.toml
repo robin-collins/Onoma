@@ -8,23 +8,68 @@ where = ["src"]
 [project]
 name = "onomatool"
 version = "0.1.0"
-description = "AI-powered file renaming tool"
+description = "AI-powered file renaming tool with LLM integration"
 readme = "README.md"
 requires-python = ">=3.10"
+license = "MIT AND (Apache-2.0 OR BSD-2-Clause)"
+authors = [
+    { name = "Robin Collins", email = "Robin.F.Collins@outlook.com" },
+]
+maintainers = [
+    { name = "Robin Collins", email = "Robin.F.Collins@outlook.com" },
+]
+keywords = ["ai", "llm", "file-rename", "automation", "cli"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: End Users/Desktop",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Filesystems",
+    "Topic :: Utilities",
+]
 dependencies = [
-    "markitdown",
-    "openai",
-    "google-generativeai",
-    "tomli",
+    "markitdown>=0.1.2",
+    "openai>=1.86.0",
+    "google-genai>=1.20.0",
+    "tomli>=2.2.1",
+    "tiktoken>=0.9.0",
+    "pydantic>=2.11.7",
+    "httpx>=0.28.1",
+    "chardet>=5.2.0",
+    "cairosvg>=2.8.2",
+    "pillow>=11.2.1",
+    "PyMuPDF>=1.26.1",
+    "ruff>=0.12.0",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.4.0",
+    "pytest-cov>=4.0.0",
+    "ruff>=0.11.13",
+]
+
+[project.urls]
+Homepage = "https://github.com/robin-collins/Onoma"
+Repository = "https://github.com/robin-collins/Onoma"
+Documentation = "https://github.com/robin-collins/Onoma#readme"
+"Bug Tracker" = "https://github.com/robin-collins/Onoma/issues"
+Changelog = "https://github.com/robin-collins/Onoma/blob/main/CHANGELOG.md"
+
 [project.scripts]
-onomatool = "onomatool.cli:main"
+onomatool = "onomatool.cli:console_script"
 
 [tool.ruff]
 line-length = 88
 indent-width = 4
-target-version = "py311"
+target-version = "py39"
 
 # Minimal exclude patterns
 exclude = [
@@ -50,3 +95,8 @@ split-on-trailing-comma = true
 quote-style = "double"
 indent-style = "space"
 line-ending = "lf"
+
+[tool.uv.workspace]
+members = [
+    "temp_init",
+]

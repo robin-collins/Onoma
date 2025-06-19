@@ -6,6 +6,10 @@ import os
 import tiktoken
 
 from onomatool.config import get_config
+from onomatool.models import (
+    generate_json_schema_from_model,
+    get_model_for_naming_convention,
+)
 from onomatool.prompts import get_image_prompt, get_system_prompt, get_user_prompt
 
 # Maximum tokens for LLM response - limits response to 100 tokens
@@ -18,177 +22,25 @@ MAX_CONTENT_CHARS = 120_000
 MAX_CONSECUTIVE_DIGITS = 10
 
 
-def generate_schema_patterns(min_words: int, max_words: int) -> dict:
+def get_pydantic_model_and_schema(naming_convention: str) -> tuple:
     """
-    Generate JSON schema patterns for all naming conventions based on min/max word counts.
+    Get the Pydantic model and JSON schema for a given naming convention.
 
     Args:
-        min_words: Minimum number of words allowed (e.g., 5)
-        max_words: Maximum number of words allowed (e.g., 15)
+        naming_convention: The naming convention string (e.g., "snake_case")
 
     Returns:
-        Dictionary with schema patterns for each naming convention
+        Tuple of (pydantic_model_class, json_schema_dict)
     """
-    if min_words < 1:
-        min_words = 1
-    if max_words < min_words:
-        max_words = min_words
-
-    # Calculate the quantifier range for regex patterns
-    # For min_words=5, max_words=15: we need {4,14} (since first word is required)
-    min_additional = max(0, min_words - 1)
-    max_additional = max_words - 1
-
-    quantifier = f"{{{min_additional},{max_additional}}}"
-
-    # Use simple alphanumeric patterns - digit limiting will be handled via prompt engineering
-    # JSON Schema regex has limited support for complex patterns, so we'll rely on LLM constraints
-    word_pattern = r"[a-z0-9]+"
-    camel_first_pattern = r"[a-z0-9]+"  # camelCase first word (lowercase start)
-    camel_word_pattern = r"[A-Z][a-z0-9]*"  # camelCase subsequent words
-    pascal_word_pattern = r"[A-Z][a-z0-9]*"  # PascalCase words
-    natural_word_pattern = r"[A-Za-z0-9]+"  # Natural language words
-
-    return {
-        "snake_case": {
-            "type": "json_schema",
-            "json_schema": {
-                "name": "suggestions",
-                "schema": {
-                    "type": "object",
-                    "properties": {
-                        "suggestions": {
-                            "type": "array",
-                            "minItems": 3,
-                            "maxItems": 3,
-                            "items": {
-                                "type": "string",
-                                "pattern": f"^{word_pattern}(_{word_pattern}){quantifier}$",
-                                "maxLength": 128,
-                            },
-                        }
-                    },
-                    "required": ["suggestions"],
-                    "additionalProperties": False,
-                },
-            },
-        },
-        "camelCase": {
-            "type": "json_schema",
-            "json_schema": {
-                "name": "suggestions",
-                "schema": {
-                    "type": "object",
-                    "properties": {
-                        "suggestions": {
-                            "type": "array",
-                            "minItems": 3,
-                            "maxItems": 3,
-                            "items": {
-                                "type": "string",
-                                "pattern": f"^{camel_first_pattern}(?:{camel_word_pattern}){quantifier}$",
-                                "maxLength": 128,
-                            },
-                        }
-                    },
-                    "required": ["suggestions"],
-                    "additionalProperties": False,
-                },
-            },
-        },
-        "kebab-case": {
-            "type": "json_schema",
-            "json_schema": {
-                "name": "suggestions",
-                "schema": {
-                    "type": "object",
-                    "properties": {
-                        "suggestions": {
-                            "type": "array",
-                            "minItems": 3,
-                            "maxItems": 3,
-                            "items": {
-                                "type": "string",
-                                "pattern": f"^{word_pattern}(-{word_pattern}){quantifier}$",
-                                "maxLength": 128,
-                            },
-                        }
-                    },
-                    "required": ["suggestions"],
-                    "additionalProperties": False,
-                },
-            },
-        },
-        "PascalCase": {
-            "type": "json_schema",
-            "json_schema": {
-                "name": "suggestions",
-                "schema": {
-                    "type": "object",
-                    "properties": {
-                        "suggestions": {
-                            "type": "array",
-                            "minItems": 3,
-                            "maxItems": 3,
-                            "items": {
-                                "type": "string",
-                                "pattern": f"^{pascal_word_pattern}(?:{pascal_word_pattern}){quantifier}$",
-                                "maxLength": 128,
-                            },
-                        }
-                    },
-                    "required": ["suggestions"],
-                    "additionalProperties": False,
-                },
-            },
-        },
-        "dot.notation": {
-            "type": "json_schema",
-            "json_schema": {
-                "name": "suggestions",
-                "schema": {
-                    "type": "object",
-                    "properties": {
-                        "suggestions": {
-                            "type": "array",
-                            "minItems": 3,
-                            "maxItems": 3,
-                            "items": {
-                                "type": "string",
-                                "pattern": f"^{word_pattern}(\\.{word_pattern}){quantifier}$",
-                                "maxLength": 128,
-                            },
-                        }
-                    },
-                    "required": ["suggestions"],
-                    "additionalProperties": False,
-                },
-            },
-        },
-        "natural language": {
-            "type": "json_schema",
-            "json_schema": {
-                "name": "suggestions",
-                "schema": {
-                    "type": "object",
-                    "properties": {
-                        "suggestions": {
-                            "type": "array",
-                            "minItems": 3,
-                            "maxItems": 3,
-                            "items": {
-                                "type": "string",
-                                "pattern": f"^{natural_word_pattern}( {natural_word_pattern}){quantifier}$",
-                                "maxLength": 128,
-                            },
-                        }
-                    },
-                    "required": ["suggestions"],
-                    "additionalProperties": False,
-                },
-            },
-        },
-    }
+    try:
+        model_class = get_model_for_naming_convention(naming_convention)
+        json_schema = generate_json_schema_from_model(model_class)
+        return model_class, json_schema
+    except ValueError:
+        # Fallback to snake_case if naming convention is not supported
+        model_class = get_model_for_naming_convention("snake_case")
+        json_schema = generate_json_schema_from_model(model_class)
+        return model_class, json_schema
 
 
 def is_image_file(file_path: str) -> bool:
@@ -207,7 +59,7 @@ def encode_image_base64(image_path: str) -> str:
 
 def get_suggestions(
     content: str,
-    verbose: bool = False,
+    verbose_level: int = 0,
     file_path: str | None = None,
     config: dict | None = None,
 ) -> list[str]:
@@ -216,7 +68,7 @@ def get_suggestions(
 
     Args:
         content: The file content to send to the LLM for analysis and suggestion.
-        verbose: If True, print the LLM request and response for debugging.
+        verbose_level: Verbosity level (0=none, 1=basic debug, 2=full debug).
         file_path: The path to the file being processed (used for image support).
         config: The configuration dictionary to use (if None, loads default config).
 
@@ -234,14 +86,15 @@ def get_suggestions(
     min_words = config.get("min_filename_words", 5)
     max_words = config.get("max_filename_words", 15)
 
-    # Generate schemas dynamically based on config
-    schemas = generate_schema_patterns(min_words, max_words)
-    schema = schemas.get(naming_convention, schemas["snake_case"])
+    # Get Pydantic model and JSON schema for the naming convention
+    pydantic_model, json_schema = get_pydantic_model_and_schema(naming_convention)
     system_prompt = get_system_prompt(config)
     # Limit text content to prevent exceeding LLM context limits
     truncated_content = content[:MAX_CONTENT_CHARS]
-    if len(content) > MAX_CONTENT_CHARS and verbose:
-        pass
+    if len(content) > MAX_CONTENT_CHARS and verbose_level > 0:
+        print(
+            f"[DEBUG] Content truncated from {len(content)} to {MAX_CONTENT_CHARS} characters"
+        )
 
     # Detect if this is an image file
     is_image = file_path and is_image_file(file_path)
@@ -292,18 +145,61 @@ def get_suggestions(
             import httpx
             from openai import OpenAI
 
-            base_url = config.get("openai_base_url", "https://api.openai.com/v1")
-            api_key = config.get("openai_api_key") or os.environ.get("OPENAI_API_KEY")
-            verify = True
-            if base_url.startswith(
-                ("http://", "https://10.", "https://127.", "https://localhost")
-            ):
-                verify = False
-            client = OpenAI(
-                base_url=base_url,
-                api_key=api_key,
-                http_client=httpx.Client(verify=verify),
-            )
+            # Check if we should use Azure OpenAI
+            use_azure = config.get("use_azure_openai", False)
+
+            if use_azure:
+                # Azure OpenAI configuration
+                azure_endpoint = config.get("azure_openai_endpoint") or os.environ.get(
+                    "AZURE_OPENAI_ENDPOINT"
+                )
+                azure_api_key = config.get("azure_openai_api_key") or os.environ.get(
+                    "AZURE_OPENAI_API_KEY"
+                )
+                azure_api_version = config.get("azure_openai_api_version", "2024-02-01")
+                azure_deployment = config.get(
+                    "azure_openai_deployment"
+                ) or os.environ.get("AZURE_OPENAI_DEPLOYMENT")
+
+                if not azure_endpoint:
+                    raise RuntimeError(
+                        "Azure OpenAI endpoint is required when use_azure_openai is True"
+                    )
+                if not azure_api_key:
+                    raise RuntimeError(
+                        "Azure OpenAI API key is required when use_azure_openai is True"
+                    )
+                if not azure_deployment:
+                    raise RuntimeError(
+                        "Azure OpenAI deployment name is required when use_azure_openai is True"
+                    )
+
+                # For Azure, we override the model with the deployment name
+                model = azure_deployment
+
+                from openai import AzureOpenAI
+
+                client = AzureOpenAI(
+                    azure_endpoint=azure_endpoint,
+                    api_key=azure_api_key,
+                    api_version=azure_api_version,
+                )
+            else:
+                # Standard OpenAI configuration
+                base_url = config.get("openai_base_url", "https://api.openai.com/v1")
+                api_key = config.get("openai_api_key") or os.environ.get(
+                    "OPENAI_API_KEY"
+                )
+                verify = True
+                if base_url.startswith(
+                    ("http://", "https://10.", "https://127.", "https://localhost")
+                ):
+                    verify = False
+                client = OpenAI(
+                    base_url=base_url,
+                    api_key=api_key,
+                    http_client=httpx.Client(verify=verify),
+                )
             if is_image and image_message:
                 messages = [
                     {
@@ -322,7 +218,25 @@ def get_suggestions(
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt},
                 ]
-            if verbose:
+            if verbose_level > 0:
+                # Print basic configuration details for -v
+                if use_azure:
+                    print("[DEBUG] Using Azure OpenAI")
+                    print(f"[DEBUG] Azure endpoint: {azure_endpoint}")
+                    print(f"[DEBUG] Azure deployment: {azure_deployment}")
+                    print(f"[DEBUG] Azure API version: {azure_api_version}")
+                else:
+                    print("[DEBUG] Using OpenAI")
+                    print(f"[DEBUG] Base URL: {base_url}")
+                print(f"[DEBUG] Model: {model}")
+                print(f"[DEBUG] Pydantic Model: {pydantic_model.__name__}")
+
+                # Print detailed schema and configuration for -vv only
+                if verbose_level > 1:
+                    print(f"[DEBUG] JSON Schema: {json.dumps(json_schema, indent=2)}")
+                    print(f"[DEBUG] Max tokens: {MAX_TOKENS}")
+                    print(f"[DEBUG] Min filename words: {min_words}")
+                    print(f"[DEBUG] Max filename words: {max_words}")
 
                 def redact_message(msg, redact_text=True):
                     if isinstance(msg, dict):
@@ -355,32 +269,83 @@ def get_suggestions(
                         ]
                     return messages
 
-                redact_text = not is_image
+                    # Show detailed request/response info only for -vv
 
-                # Calculate character and token counts for the entire request
-                sum(len(str(msg.get("content", ""))) for msg in messages)
-                if is_image:
-                    # For images, only count text content, not base64 image data
-                    len(user_prompt)
-                count_tokens_for_messages(messages, model)
+                if verbose_level > 1:
+                    redact_text = not is_image
 
-                if redact_text:
-                    pass
-                else:
-                    pass
-            response = client.chat.completions.create(
-                model=model,  # Now loaded from config
-                messages=messages,
-                response_format=schema,
-                max_tokens=MAX_TOKENS,
-            )
-            if verbose:
-                pass
-            result = json.loads(response.choices[0].message.content)
-            suggestions = result["suggestions"]
-            if not (isinstance(suggestions, list) and len(suggestions) == 3):
-                raise RuntimeError("LLM did not return exactly 3 suggestions.")
-            return suggestions
+                    # Calculate character and token counts for the entire request
+                    total_chars = sum(
+                        len(str(msg.get("content", ""))) for msg in messages
+                    )
+                    if is_image:
+                        # For images, only count text content, not base64 image data
+                        total_chars = len(user_prompt)
+                    total_tokens = count_tokens_for_messages(messages, model)
+
+                    print(f"[DEBUG] Total characters in request: {total_chars}")
+                    print(f"[DEBUG] Estimated tokens: {total_tokens}")
+
+                    redacted_messages = redact_messages(
+                        messages, redact_text=redact_text
+                    )
+                    print(
+                        f"[DEBUG] Messages: {json.dumps(redacted_messages, indent=2)}"
+                    )
+
+                    if redact_text:
+                        print("[DEBUG] Text content redacted as [[file_content]]")
+                    else:
+                        print(
+                            "[DEBUG] Image content - text not redacted, base64 images redacted as [[base64_image]]"
+                        )
+            # Try to use structured output with Pydantic first
+            try:
+                response = client.beta.chat.completions.parse(
+                    model=model,
+                    messages=messages,
+                    response_format=pydantic_model,
+                    max_tokens=MAX_TOKENS,
+                )
+                parsed_result = response.choices[0].message.parsed
+                if parsed_result is None:
+                    raise RuntimeError("Structured output parsing failed")
+
+                if verbose_level > 0:
+                    print("[DEBUG] Used structured output with Pydantic model")
+                    print(f"[DEBUG] Response: suggestions={parsed_result.suggestions}")
+
+                return parsed_result.suggestions
+
+            except Exception as structured_error:
+                if verbose_level > 0:
+                    print(f"[DEBUG] Structured output failed: {structured_error}")
+                    print("[DEBUG] Falling back to JSON schema approach")
+
+                # Fallback to traditional JSON schema approach
+                response = client.chat.completions.create(
+                    model=model,
+                    messages=messages,
+                    response_format=json_schema,
+                    max_tokens=MAX_TOKENS,
+                )
+                result = json.loads(response.choices[0].message.content)
+                suggestions = result["suggestions"]
+
+                if verbose_level > 0:
+                    print("[DEBUG] Used JSON Schema fallback")
+                    print(f"[DEBUG] Response: suggestions={suggestions}")
+
+                if verbose_level > 1:
+                    print(
+                        f"[DEBUG] Full response content: {response.choices[0].message.content}"
+                    )
+
+                if not (isinstance(suggestions, list) and len(suggestions) == 3):
+                    raise RuntimeError(
+                        "LLM did not return exactly 3 suggestions."
+                    ) from None
+                return suggestions
         except Exception as err:
             raise RuntimeError(f"OpenAI LLM call failed: {err}") from err
     elif provider == "google":
@@ -398,21 +363,28 @@ def get_suggestions(
                 max_output_tokens=MAX_TOKENS
             )
 
-            if verbose:
+            if verbose_level > 1:
                 # Calculate character and token counts for Google request
-                len(user_prompt)
-                count_text_tokens(
+                total_chars = len(user_prompt)
+                total_tokens = count_text_tokens(
                     user_prompt, "gpt-4o"
                 )  # Use gpt-4o encoding as approximation
+                print(f"[DEBUG] Total characters in request: {total_chars}")
+                print(f"[DEBUG] Estimated tokens: {total_tokens}")
 
             response = model.generate_content(
                 user_prompt, generation_config=generation_config
             )
             import re
 
-            if verbose:
-                pass
             suggestions = re.findall(r'"([a-zA-Z0-9_\-\. ]{1,128})"', response.text)
+
+            if verbose_level > 0:
+                print(f"[DEBUG] Response: suggestions={suggestions[:3]}")
+
+            if verbose_level > 1:
+                print(f"[DEBUG] Full response text: {response.text}")
+
             if len(suggestions) < 3:
                 raise RuntimeError("Google LLM did not return enough suggestions.")
             return suggestions[:3]

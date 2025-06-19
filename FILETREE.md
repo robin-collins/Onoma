@@ -7,11 +7,18 @@
 ├── .cursorignore
 ├── .gitignore
 ├── ARCHITECTURE.md              # System architecture documentation
+├── AZURE_OPENAI_SETUP.md        # Azure OpenAI configuration guide
 ├── CHANGELOG.md                 # Change history and version notes
 ├── FILETREE.md                  # This file - project structure overview
+├── LICENSE                      # MIT license for open source distribution
+├── MANIFEST.in                  # Files to include in PyPI package
 ├── README.md                    # Main project documentation
 ├── requirements.txt             # Python dependencies
-├── pyproject.toml              # Project configuration and build settings
+├── pyproject.toml              # Complete PyPI packaging configuration
+├── scripts/
+│   ├── build.sh                 # Automated PyPI package build script
+│   ├── check-format.sh          # Code formatting check script
+│   └── test_install.sh          # Installation verification script
 ├── src/
 │   └── onomatool/
 │       ├── __init__.py          # Package initialization
@@ -20,6 +27,7 @@
 │       ├── file_collector.py    # Glob pattern file collection
 │       ├── file_dispatcher.py   # Routes files to appropriate processors
 │       ├── llm_integration.py   # OpenAI/Google API integration
+│       ├── models.py            # Pydantic models for structured LLM responses
 │       ├── conflict_resolver.py # Filename conflict resolution with numeric suffixes
 │       ├── renamer.py           # File renaming operations
 │       ├── prompts.py           # Default system and user prompts for LLMs
@@ -47,7 +55,9 @@
 - **`src/onomatool/config.py`**: Handles `.onomarc` TOML configuration loading with fallback to defaults
   - New options: `min_filename_words` (default: 5) and `max_filename_words` (default: 15)
   - Configurable word count limits for all naming conventions
+  - Azure OpenAI integration support with dedicated configuration options
 - **`src/onomatool/prompts.py`**: Centralized prompt management with configurable system/user/image prompts
+- **`AZURE_OPENAI_SETUP.md`**: Comprehensive guide for configuring Azure OpenAI services
 
 ### File Processing Pipeline
 - **`src/onomatool/file_collector.py`**: Glob pattern matching for file discovery
@@ -63,13 +73,24 @@
 ### LLM Integration
 - **`src/onomatool/llm_integration.py`**:
   - OpenAI API integration with local endpoint support
+  - **Azure OpenAI API integration** with AzureOpenAI client support
+  - Automatic provider switching based on `use_azure_openai` configuration flag
+  - Azure deployment name handling and API version management
+  - Environment variable support for Azure configuration
+  - **Pydantic Structured Output**: Uses `client.beta.chat.completions.parse()` with type-safe Pydantic models
+  - Automatic fallback to JSON schema if structured output fails
   - Google Gemini API integration
-  - Image processing (base64 encoding for OpenAI)
-  - JSON schema-based filename suggestions with dynamic pattern generation
+  - Image processing (base64 encoding for OpenAI/Azure OpenAI)
   - SSL handling for local/HTTP endpoints
   - Token limit control: `MAX_TOKENS = 100` constant for response length control
-  - Consistent token limiting across both OpenAI and Google providers
-  - Configurable word count limits: `generate_schema_patterns()` function creates schemas based on `min_filename_words` and `max_filename_words`
+  - Consistent token limiting across OpenAI, Azure OpenAI, and Google providers
+  - Enhanced verbose mode with provider-specific debugging and Pydantic model information
+- **`src/onomatool/models.py`**:
+  - **Pydantic Models**: Type-safe models for all naming conventions with built-in validation
+  - Individual models for each format: `SnakeCaseFilenameSuggestions`, `CamelCaseFilenameSuggestions`, etc.
+  - Automatic JSON schema generation from Pydantic models for fallback compatibility
+  - Format validation ensuring suggestions match naming convention patterns
+  - Utility functions for model selection and schema generation
 
 ### Utilities
 - **`src/onomatool/utils/image_utils.py`**: SVG-to-PNG conversion with Cairo/Pillow, maintaining aspect ratio at max 1024px
