@@ -126,6 +126,7 @@ def get_suggestions(
 
     # MOCK PROVIDER: Always return static suggestions for tests
     if provider == "mock":
+
         if naming_convention == "snake_case":
             return ["mock_file_one", "mock_file_two", "mock_file_three"]
         if naming_convention == "camelCase":

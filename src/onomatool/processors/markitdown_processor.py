@@ -41,9 +41,10 @@ class MarkitdownProcessor:
         """
         self.config = config
         self.debug = debug
+        docintel_endpoint = config.get("docintel_endpoint")
         self.md = MarkItDown(
             enable_plugins=config.get("enable_plugins", False),
-            docintel_endpoint=config.get("docintel_endpoint", ""),
+            docintel_endpoint=docintel_endpoint or None,
             llm_model=config.get("llm_model", "gpt-4o"),
         )
 
